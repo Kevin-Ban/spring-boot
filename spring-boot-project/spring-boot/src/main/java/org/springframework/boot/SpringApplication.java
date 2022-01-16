@@ -254,11 +254,17 @@ public class SpringApplication {
 	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
+		// 将SpringApplication的class作为一个字段保存起来
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 记录当前应用是standar还是web
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
-		this.bootstrapRegistryInitializers = new ArrayList<>(
-				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		// [#] 这里调用了三次 getSpringFactoriesInstances 这个方法
+		// 这个方法会将spring.factories文件中的类路径加载进来，缓存在 SpringFactoriesLoader 的缓存中
+		// 之后再需要这些类的时候直接去缓存中拿就可以了
+		this.bootstrapRegistryInitializers = new ArrayList<>(getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		// 在缓存中筛选出 ApplicationContextInitializer 类保存起来  这个有什么用
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 在缓存中筛选出监听器，这个又有什么用
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
@@ -289,17 +295,27 @@ public class SpringApplication {
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
+		// [#] 在缓存中筛选出监听器，监听器是用来监听spring中的事件的
+		// 我们也可以自己设置一些监听器，发布一些事件
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 开启监听器
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// [#] 创建 spring 启动环境，保存spring的配置文件中的内容
+			// 比如：application.yml boostrap.yml 等文件中的配置
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+			// 忽略一些bean对象 ????
 			configureIgnoreBeanInfo(environment);
+			// 打印 spring 的那个图形
 			Banner printedBanner = printBanner(environment);
+			// 创建一个Spring容器
 			context = createApplicationContext();
 			context.setApplicationStartup(this.applicationStartup);
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+			// 刷新 spring 容器
 			refreshContext(context);
+			// 拓展方法，用于用户自定义
 			afterRefresh(context, applicationArguments);
 			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
 			if (this.logStartupInfo) {
