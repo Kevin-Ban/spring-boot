@@ -7,11 +7,11 @@ plugins {
 repositories {
 	mavenCentral()
 	gradlePluginPortal()
-	maven { url "https://repo.spring.io/release" }
+	maven { url "https://maven.aliyun.com/repository/gradle-plugin" }
 }
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 8
+targetCompatibility = 8
 
 dependencies {
 	checkstyle "io.spring.javaformat:spring-javaformat-checkstyle:${javaFormatVersion}"
